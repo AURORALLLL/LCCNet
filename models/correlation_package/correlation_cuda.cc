@@ -77,7 +77,7 @@ int correlation_forward_cuda(at::Tensor& input1, at::Tensor& input2, at::Tensor&
 
   //check for errors
   if (!success) {
-    AT_ERROR("CUDA call failed");
+    TORCH_CHECK("CUDA call failed");
   }
 
   return 1;
@@ -157,7 +157,7 @@ int correlation_backward_cuda(at::Tensor& input1, at::Tensor& input2, at::Tensor
                                                );
 
   if (!success) {
-    AT_ERROR("CUDA call failed");
+    TORCH_CHECK("CUDA call failed");
   }
 
   return 1;

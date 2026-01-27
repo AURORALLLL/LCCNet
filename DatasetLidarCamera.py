@@ -209,7 +209,7 @@ class DatasetLidarCameraKittiOdometry(Dataset):
 
         # Rotate PointCloud for img_rotation
         if self.split == 'train':
-            R = mathutils.Euler((radians(img_rotation), 0, 0), 'XYZ')
+            R = mathutils.Euler((radians(img_rotation), 0, 0))
             T = mathutils.Vector((0., 0., 0.))
             pc_in = rotate_forward(pc_in, R, T)
 
@@ -234,7 +234,7 @@ class DatasetLidarCameraKittiOdometry(Dataset):
         # 随机设置一定范围内的标定参数扰动值
         # train的时候每次都随机生成,每个epoch使用不同的参数
         # test则在初始化的时候提前设置好,每个epoch都使用相同的参数
-        R = mathutils.Euler((rotx, roty, rotz), 'XYZ')
+        R = mathutils.Euler((rotx, roty, rotz))
         T = mathutils.Vector((transl_x, transl_y, transl_z))
 
         R, T = invert_pose(R, T)
@@ -472,7 +472,7 @@ class DatasetLidarCameraKittiRaw(Dataset):
         # 随机设置一定范围内的标定参数扰动值
         # train的时候每次都随机生成,每个epoch使用不同的参数
         # test则在初始化的时候提前设置好,每个epoch都使用相同的参数
-        R = mathutils.Euler((rotx, roty, rotz), 'XYZ')
+        R = mathutils.Euler((rotx, roty, rotz))
         T = mathutils.Vector((transl_x, transl_y, transl_z))
 
         R, T = invert_pose(R, T)

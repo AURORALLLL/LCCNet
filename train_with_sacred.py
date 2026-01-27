@@ -50,7 +50,7 @@ ex.captured_out_filter = apply_backspaces_and_linefeeds
 def config():
     checkpoints = './checkpoints/'
     dataset = 'kitti/odom' # 'kitti/raw'
-    data_folder = '/home/wangshuo/Datasets/KITTI/odometry/data_odometry_full/'
+    data_folder = '/mnt/Datasets/Dataset/kitti_odometry/dataset'
     use_reflectance = False
     val_sequence = 0
     epochs = 120
@@ -63,7 +63,7 @@ def config():
     network = 'Res_f1'
     optimizer = 'adam'
     resume = True
-    weights = './pretrained/kitti/kitti_iter5.tar'
+    weights = None
     rescale_rot = 1.0
     rescale_transl = 2.0
     precision = "O0"
@@ -76,7 +76,7 @@ def config():
     starting_epoch = -1
 
 
-# device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 os.environ['CUDA_VISIBLE_DEVICES'] = '0, 1, 2, 3'
 
 
@@ -178,6 +178,7 @@ def val(model, rgb_img, refl_img, target_transl, target_rot, loss_fn, point_clou
 @ex.automain
 def main(_config, _run, seed):
     global EPOCH
+    _config = dict(_config)
     print('Loss Function Choice: {}'.format(_config['loss']))
 
     if _config['val_sequence'] is None:
