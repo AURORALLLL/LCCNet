@@ -1,7 +1,6 @@
 # LCCNet
 
-Official PyTorch implementation of the paper “LCCNet: Lidar and Camera Self-Calibration Using Cost Volume Network”. A video of the demonstration of the method can be found on
- https://www.youtube.com/watch?v=UAAGjYT708A
+PyTorch implementation of the paper “LCCNet: Lidar and Camera Self-Calibration Using Cost Volume Network”
 
 ## Table of Contents
 
@@ -15,12 +14,13 @@ Official PyTorch implementation of the paper “LCCNet: Lidar and Camera Self-Ca
 
 ## Requirements
 
-* python 3.6 (recommend to use [Anaconda](https://www.anaconda.com/))
-* PyTorch==1.0.1.post2
-* Torchvision==0.2.2
+* python 3.10 (recommend to use [Anaconda](https://www.anaconda.com/))
+* PyTorch==2.3.1+cu118
+* Torchvision==0.18.1+cu118
 * Install requirements and dependencies
 ```commandline
 pip install -r requirements.txt
+pip install -e ./models/correlation_package
 ```
 
 ## Pre-trained model
