@@ -20,7 +20,7 @@ PyTorch implementation of the paper “LCCNet: Lidar and Camera Self-Calibration
 * Install requirements and dependencies
 ```commandline
 pip install -r requirements.txt
-pip install -e ./models/correlation_package
+pip install -v -e ./models/correlation_package --no-build-isolation
 ```
 
 ## Pre-trained model
