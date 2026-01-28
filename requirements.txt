@@ -15,4 +15,3 @@ tensorboardX
 open3d-python
 scikit-image
 sacred
--e ./models/correlation_package

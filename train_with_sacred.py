@@ -11,6 +11,8 @@
 
 import math
 import os
+os.environ['CUDA_VISIBLE_DEVICES'] = '1,3'
+
 import random
 import time
 
@@ -37,6 +39,7 @@ from tensorboardX import SummaryWriter
 from utils import (mat2xyzrpy, merge_inputs, overlay_imgs, quat2mat,
                    quaternion_from_matrix, rotate_back, rotate_forward,
                    tvector2mat)
+from tqdm import tqdm
 
 torch.backends.cudnn.enabled = True
 torch.backends.cudnn.benchmark = False
@@ -50,7 +53,7 @@ ex.captured_out_filter = apply_backspaces_and_linefeeds
 def config():
     checkpoints = './checkpoints/'
     dataset = 'kitti/odom' # 'kitti/raw'
-    data_folder = '/mnt/Datasets/Dataset/kitti_odometry/dataset'
+    data_folder = '/mnt/Datasets_fast/Dataset/kitti_odometry/dataset'
     use_reflectance = False
     val_sequence = 0
     epochs = 120
@@ -59,7 +62,7 @@ def config():
     max_t = 0.1 # 1.5, 1.0,  0.5,  0.2,  0.1
     max_r = 1. # 20.0, 10.0, 5.0,  2.0,  1.0
     batch_size = 240  # 120
-    num_worker = 6
+    num_worker = 10
     network = 'Res_f1'
     optimizer = 'adam'
     resume = True
@@ -76,9 +79,7 @@ def config():
     starting_epoch = -1
 
 
-device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-os.environ['CUDA_VISIBLE_DEVICES'] = '0, 1, 2, 3'
-
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 EPOCH = 1
 def _init_fn(worker_id, seed):
@@ -161,6 +162,7 @@ def val(model, rgb_img, refl_img, target_transl, target_rot, loss_fn, point_clou
     total_trasl_error = torch.tensor(0.0)
     total_rot_error = quaternion_distance(target_rot, rot_err, target_rot.device)
     total_rot_error = total_rot_error * 180. / math.pi
+    target_transl = target_transl.to(transl_err.device)
     for j in range(rgb_img.shape[0]):
         total_trasl_error += torch.norm(target_transl[j] - transl_err[j]) * 100.
 
@@ -294,7 +296,7 @@ def main(_config, _run, seed):
         # # load params
         # model.load_state_dict(new_state_dict)
 
-    # model = model.to(device)
+    model = model.to(device)
     model = nn.DataParallel(model)
     model = model.cuda()
 
@@ -347,7 +349,9 @@ def main(_config, _run, seed):
 
         ## Training ##
         time_for_50ep = time.time()
-        for batch_idx, sample in enumerate(TrainImgLoader):
+        train_pbar = tqdm(enumerate(TrainImgLoader), total=len(TrainImgLoader), 
+                          desc=f'Epoch {epoch} [Train]', leave=True)
+        for batch_idx, sample in train_pbar:
             #print(f'batch {batch_idx+1}/{len(TrainImgLoader)}', end='\r')
             start_time = time.time()
             lidar_input = []
@@ -460,6 +464,13 @@ def main(_config, _run, seed):
 
             local_loss += loss['total_loss'].item()
 
+            train_pbar.set_postfix({
+                'loss': f'{loss["total_loss"].item():.4f}',
+                'transl': f'{loss["transl_loss"].item():.4f}',
+                'rot': f'{loss["rot_loss"].item():.4f}',
+                'avg_loss': f'{local_loss/(batch_idx%50+1 if batch_idx%50 != 0 else 50):.4f}'
+            })
+
             if batch_idx % 50 == 0 and batch_idx != 0:
 
                 print(f'Iter {batch_idx}/{len(TrainImgLoader)} training loss = {local_loss/50:.3f}, '
@@ -485,7 +496,9 @@ def main(_config, _run, seed):
         total_val_r = 0.
 
         local_loss = 0.0
-        for batch_idx, sample in enumerate(ValImgLoader):
+        val_pbar = tqdm(enumerate(ValImgLoader), total=len(ValImgLoader), 
+                        desc=f'Epoch {epoch} [Val]', leave=True)
+        for batch_idx, sample in val_pbar:
             #print(f'batch {batch_idx+1}/{len(TrainImgLoader)}', end='\r')
             start_time = time.time()
             lidar_input = []
@@ -621,6 +634,15 @@ def main(_config, _run, seed):
             total_val_t += trasl_e
             total_val_r += rot_e
             local_loss += loss['total_loss'].item()
+
+            val_pbar.set_postfix({
+                'loss': f'{loss["total_loss"].item():.4f}',
+                'transl': f'{loss["transl_loss"].item():.4f}',
+                'rot': f'{loss["rot_loss"].item():.4f}',
+                't_err': f'{trasl_e:.2f}cm',
+                'r_err': f'{rot_e:.2f}°',
+                'avg_loss': f'{local_loss/(batch_idx%50+1 if batch_idx%50 != 0 else 50):.4f}'
+            })
 
             if batch_idx % 50 == 0 and batch_idx != 0:
                 print('Iter %d val loss = %.3f , time = %.2f' % (batch_idx, local_loss/50.,
